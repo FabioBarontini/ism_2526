@@ -62,7 +62,6 @@
             color: #ffffff;
         }
 
-        /* Statistiche Grid Interna */
         .stat-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -82,7 +81,6 @@
             color: var(--accent-color);
         }
 
-        /* Muro Messaggi */
         .message-input textarea {
             width: 100%;
             height: 80px;
@@ -117,7 +115,7 @@
         }
 
         .wall {
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             margin-top: 15px;
         }
@@ -128,6 +126,11 @@
             border-radius: 6px;
             margin-bottom: 10px;
             font-size: 0.9rem;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .msg-post.anon {
+            border-left: 4px solid var(--warning-color);
         }
 
         .msg-author {
@@ -137,22 +140,8 @@
             font-weight: bold;
         }
 
-        .msg-anon {
+        .msg-author.anon {
             color: var(--warning-color);
-        }
-
-        /* Classifiche */
-        .leaderboard-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .leaderboard-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #21262d;
         }
     </style>
 </head>
@@ -199,3 +188,109 @@
                 </div>
             </div>
             <div class="wall" id="muro-container">
+                </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Al caricamento della pagina scarica i dati aggiornati dal database
+    window.addEventListener('DOMContentLoaded', () => {
+        caricaStatistiche();
+        caricaMessaggi();
+    });
+
+    // 1. Recupera le statistiche medie dal backend e aggiorna l'interfaccia
+    async function caricaStatistiche() {
+        try {
+            const response = await fetch('/api/statistiche');
+            const dati = await response.json();
+
+            if (response.ok) {
+                // Arrotonda a un decimale per una visualizzazione pulita
+                document.getElementById('lbl-stress').innerText = dati.stress_medio ? dati.stress_medio.toFixed(1) : '-';
+                document.getElementById('lbl-ansia').innerText = dati.ansia_media ? dati.ansia_media.toFixed(1) : '-';
+                document.getElementById('lbl-sonno').innerText = dati.sonno_medio ? dati.sonno_medio.toFixed(1) + 'h' : '-';
+                document.getElementById('lbl-studio').innerText = dati.studio_medio ? dati.studio_medio.toFixed(1) + 'h' : '-';
+            }
+        } catch (error) {
+            console.error("Errore nel caricamento delle statistiche:", error);
+        }
+    }
+
+    // 2. Recupera la lista dei messaggi e la stampa a schermo
+    async function caricaMessaggi() {
+        try {
+            const response = await fetch('/api/messaggi');
+            const messaggi = await response.json();
+
+            const container = document.getElementById('muro-container');
+            container.innerHTML = ''; // Svuota il contenitore vecchio
+
+            if (response.ok && messaggi.length > 0) {
+                messaggi.forEach(msg => {
+                    const div = document.createElement('div');
+                    // Applica una classe differente se il messaggio è anonimo
+                    div.className = `msg-post ${msg.is_anonimo ? 'anon' : ''}`;
+
+                    const autore = msg.is_anonimo ? "Studente Anonimo" : (msg.nickname || "Utente Sconosciuto");
+                    const classeAutore = msg.is_anonimo ? "msg-author anon" : "msg-author";
+
+                    div.innerHTML = `
+                        <div class="${classeAutore}">${autore}</div>
+                        <div>${escapeHTML(msg.testo)}</div>
+                    `;
+                    container.appendChild(div);
+                });
+            } else {
+                container.innerHTML = '<p style="text-align:center; color:#8b949e;">Nessun messaggio sul muro. Scrivi qualcosa!</p>';
+            }
+        } catch (error) {
+            console.error("Errore nel caricamento del muro:", error);
+        }
+    }
+
+    // 3. Spedisce il nuovo messaggio al backend Express
+    async function inviaMessaggio() {
+        const inputTesto = document.getElementById('txt-messaggio');
+        const chkAnonimo = document.getElementById('chk-anonimo');
+
+        const testo = inputTesto.value.trim();
+        if (!testo) return alert("Scrivi un messaggio prima di pubblicare!");
+
+        // Payload da spedire alla rotta POST /api/messaggi
+        const corpoRichiesta = {
+            id_utente: 1, // Simuliamo temporaneamente l'utente loggato con ID 1 (Marco)
+            testo: testo,
+            is_anonimo: chkAnonimo.checked
+        };
+
+        try {
+            const response = await fetch('/api/messaggi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(corpoRichiesta)
+            });
+
+            if (response.ok) {
+                inputTesto.value = ''; // Resetta il campo di testo
+                chkAnonimo.checked = false; // Togli la spunta dall'anonimo
+                caricaMessaggi(); // Ricarica subito la lista aggiornata dal DB
+            } else {
+                alert("Errore durante l'invio del messaggio.");
+            }
+        } catch (error) {
+            console.error("Errore di connessione con il server:", error);
+        }
+    }
+
+    // Funzione di sicurezza per evitare attacchi XSS (iniezione di codice maligno nei messaggi)
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g,
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+</script>
+
+</body>
+</html>
