@@ -4,30 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ISM - Dashboard Controllo Continuo</title>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-
     <style>
         :root {
-            --bg-color: #0d1117;
-            --card-bg: #161b22;
-            --text-color: #c9d1d9;
-            --accent-color: #58a6ff;
-            --danger-color: #f85149;
-            --success-color: #3fb950;
-            --warning-color: #d29922;
+            --bg-color: #0d1117; --card-bg: #161b22; --text-color: #c9d1d9;
+            --accent-color: #58a6ff; --danger-color: #f85149; --success-color: #3fb950; --warning-color: #d29922;
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; }
-        header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid #30363d; padding-bottom: 20px; }
-        header h1 { color: var(--accent-color); margin-bottom: 5px; }
+        header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid #30363d; padding-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { color: var(--accent-color); margin: 0; font-size: 1.8rem; }
         
         .main-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
         .right-column { display: grid; grid-template-columns: 1fr; gap: 20px; }
@@ -38,97 +25,128 @@
         
         .form-group { margin-bottom: 12px; display: flex; flex-direction: column; }
         .form-group label { font-size: 0.85rem; margin-bottom: 4px; color: #8b949e; }
-        .form-group input[type="number"], .form-group input[type="range"] {
-            background: #21262d; border: 1px solid #30363d; color: white; padding: 8px; border-radius: 6px;
-        }
+        .form-group input { background: #21262d; border: 1px solid #30363d; color: white; padding: 8px; border-radius: 6px; }
         .range-container { display: flex; align-items: center; gap: 10px; }
         .range-container span { font-size: 0.9rem; min-width: 35px; text-align: right; }
 
-        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; text-align: center; margin-bottom: 15px; }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; text-align: center; margin-bottom: 15px; }
         .stat-box { background: #21262d; padding: 12px; border-radius: 6px; font-size: 0.85rem; }
         .stat-val { font-size: 1.3rem; font-weight: bold; color: var(--accent-color); margin-top: 4px; }
-        .stat-box.danger .stat-val { color: var(--danger-color); }
 
-        button { background-color: var(--accent-color); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+        button { background-color: var(--accent-color); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         button:hover { opacity: 0.9; }
+        .btn-danger { background-color: var(--danger-color); }
+        
         .message-input textarea { width: 100%; height: 60px; background: #21262d; border: 1px solid #30363d; color: white; border-radius: 6px; padding: 10px; box-sizing: border-box; resize: none; }
         .wall { max-height: 200px; overflow-y: auto; margin-top: 15px; }
         .msg-post { background: #21262d; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 0.85rem; border-left: 4px solid var(--accent-color); }
         .msg-post.anon { border-left: 4px solid var(--warning-color); }
         .msg-author { font-weight: bold; color: var(--accent-color); margin-bottom: 3px; font-size: 0.75rem; }
+
+        /* Schermata di Accesso */
+        .auth-wrapper { max-width: 400px; margin: 80px auto; }
+        .toggle-auth { text-align: center; margin-top: 15px; font-size: 0.9rem; cursor: pointer; color: var(--accent-color); text-decoration: underline; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <header>
-        <h1>ISM - Monitoraggio Continuo Classe</h1>
-        <p>Rilevazioni multiple ad alta precisione temporale</p>
-    </header>
-
-    <div class="main-grid">
-        <div class="card">
-            <h2>Registra Rilevazione Istantanea</h2>
-            <form id="frm-aggiornamento" onsubmit="inviaDati(event)">
-                <div class="form-group"><label>Ore Sonno Notturno</label><input type="number" id="sonno" min="0" max="24" value="6" required></div>
-                <div class="form-group"><label>Ore Studio Oggi</label><input type="number" id="studio" min="0" max="24" value="3" required></div>
-                <div class="form-group"><label>Stress (1-10)</label><input type="number" id="stress" min="1" max="10" value="5" required></div>
-                <div class="form-group"><label>Ansia (1-10)</label><input type="number" id="ansia" min="1" max="10" value="5" required></div>
-                <div class="form-group"><label>Crisi Esistenziali (0-10)</label><input type="number" id="crisi" min="0" max="10" value="0" required></div>
-                <div class="form-group"><label>Energia Percepita (1-10)</label><input type="number" id="energia" min="1" max="10" value="6" required></div>
-                
-                <div class="form-group"><label>Caffè Assunti ad Ora</label><input type="number" id="caffe" min="0" value="1" required></div>
-                <div class="form-group"><label>Energy Drink / Stimolanti</label><input type="number" id="stimolanti" min="0" value="0" required></div>
-                <div class="form-group"><label>Allucinazioni Esistenziali/Visive</label><input type="number" id="allucinazioni" min="0" value="0" required></div>
-
-                <div class="form-group"><label>Copertura Prima Prova (%)</label>
-                    <div class="range-container"><input type="range" id="c_prima" min="0" max="100" value="40" oninput="document.getElementById('v_prima').innerText = this.value + '%'"><span id="v_prima">40%</span></div>
-                </div>
-                <div class="form-group"><label>Copertura Seconda Prova (%)</label>
-                    <div class="range-container"><input type="range" id="c_seconda" min="0" max="100" value="25" oninput="document.getElementById('v_seconda').innerText = this.value + '%'"><span id="v_seconda">25%</span></div>
-                </div>
-                <div class="form-group"><label>Copertura Orale (%)</label>
-                    <div class="range-container"><input type="range" id="c_orale" min="0" max="100" value="15" oninput="document.getElementById('v_orale').innerText = this.value + '%'"><span id="v_orale">15%</span></div>
-                </div>
-
-                <button type="submit">Invia Stato Attuale</button>
+    <div id="sezione-auth" class="auth-wrapper">
+        <div id="card-login" class="card">
+            <h2>Accedi a ISM</h2>
+            <form onsubmit="eseguiLogin(event)">
+                <div class="form-group"><label>Username</label><input type="text" id="log-user" required></div>
+                <div class="form-group"><label>Password</label><input type="password" id="log-pass" required></div>
+                <button type="submit" style="width:100%">Entra nella Dashboard</button>
             </form>
+            <div class="toggle-auth" onclick="switchAuth(true)">Non hai un account? Registrati qui</div>
         </div>
 
-        <div class="right-column">
+        <div id="card-registrazione" class="card hidden">
+            <h2>Crea Account Studente</h2>
+            <form onsubmit="eseguiRegistrazione(event)">
+                <div class="form-group"><label>Username (per il login)</label><input type="text" id="reg-user" required></div>
+                <div class="form-group"><label>Nickname pubblico (per il muro)</label><input type="text" id="reg-nick" required></div>
+                <div class="form-group"><label>Il tuo Nome</label><input type="text" id="reg-nome" required></div>
+                <div class="form-group"><label>Classe (es: 5A)</label><input type="text" id="reg-classe" required></div>
+                <div class="form-group"><label>Password</label><input type="password" id="reg-pass" required></div>
+                <button type="submit" style="width:100%">Registrati</button>
+            </form>
+            <div class="toggle-auth" onclick="switchAuth(false)">Hai già un account? Accedi</div>
+        </div>
+    </div>
+
+    <div id="sezione-applicazione" class="hidden">
+        <header>
+            <div>
+                <h1>ISM - Dashboard Maturità</h1>
+                <span id="saluto-utente" style="color: var(--warning-color); font-size: 0.9rem;"></span>
+            </div>
+            <button onclick="eseguiLogout()" class="btn-danger">Disconnetti</button>
+        </header>
+
+        <div class="main-grid">
             <div class="card">
-                <h2>Medie Generali Classe</h2>
-                <div class="stat-grid">
-                    <div class="stat-box"><div>Stress</div><div class="stat-val" id="lbl-stress">-</div></div>
-                    <div class="stat-box"><div>Ansia</div><div class="stat-val" id="lbl-ansia">-</div></div>
-                    <div class="stat-box"><div>Caffè</div><div class="stat-val" id="lbl-caffe">-</div></div>
-                    <div class="stat-box"><div>Stimolanti</div><div class="stat-val" id="lbl-stimolanti">-</div></div>
-                    <div class="stat-box danger"><div>Allucinazioni</div><div class="stat-val" id="lbl-allucinazioni">-</div></div>
-                </div>
-                <div class="stat-grid">
-                    <div class="stat-box"><div>Prima Prova</div><div class="stat-val" id="lbl-p-prima">-</div></div>
-                    <div class="stat-box"><div>Seconda Prova</div><div class="stat-val" id="lbl-p-seconda">-</div></div>
-                    <div class="stat-box"><div>Orale</div><div class="stat-val" id="lbl-p-orale">-</div></div>
-                </div>
+                <h2>Nuova Rilevazione Stato</h2>
+                <form id="frm-aggiornamento" onsubmit="inviaDati(event)">
+                    <div class="form-group"><label>Ore Sonno Notturno</label><input type="number" id="sonno" min="0" max="24" value="6" required></div>
+                    <div class="form-group"><label>Ore Studio Oggi</label><input type="number" id="studio" min="0" max="24" value="3" required></div>
+                    <div class="form-group"><label>Stress (1-10)</label><input type="number" id="stress" min="1" max="10" value="5" required></div>
+                    <div class="form-group"><label>Ansia (1-10)</label><input type="number" id="ansia" min="1" max="10" value="5" required></div>
+                    <div class="form-group"><label>Crisi Esistenziali (0-10)</label><input type="number" id="crisi" min="0" max="10" value="0" required></div>
+                    <div class="form-group"><label>Energia Percepita (1-10)</label><input type="number" id="energia" min="1" max="10" value="6" required></div>
+                    
+                    <div class="form-group"><label>Caffè Assunti</label><input type="number" id="caffe" min="0" value="1" required></div>
+                    <div class="form-group"><label>Energy Drink / Stimolanti</label><input type="number" id="stimolanti" min="0" value="0" required></div>
+                    <div class="form-group"><label>Allucinazioni avute</label><input type="number" id="allucinazioni" min="0" value="0" required></div>
+
+                    <div class="form-group"><label>Copertura Prima Prova (%)</label>
+                        <div class="range-container"><input type="range" id="c_prima" min="0" max="100" value="40" oninput="document.getElementById('v_prima').innerText = this.value + '%'"><span id="v_prima">40%</span></div>
+                    </div>
+                    <div class="form-group"><label>Copertura Seconda Prova (%)</label>
+                        <div class="range-container"><input type="range" id="c_seconda" min="0" max="100" value="25" oninput="document.getElementById('v_seconda').innerText = this.value + '%'"><span id="v_seconda">25%</span></div>
+                    </div>
+                    <div class="form-group"><label>Copertura Orale (%)</label>
+                        <div class="range-container"><input type="range" id="c_orale" min="0" max="100" value="15" oninput="document.getElementById('v_orale').innerText = this.value + '%'"><span id="v_orale">15%</span></div>
+                    </div>
+                    <button type="submit" style="width: 100%; margin-top: 5px;">Invia Stato Attuale</button>
+                </form>
             </div>
 
-            <div class="card">
-                <h2>Linea Temporale Indice ISM (Tempo Reale)</h2>
-                <div style="position: relative; height:280px; width:100%">
-                    <canvas id="chart-andamento"></canvas>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>Muro della Disperazione</h2>
-                <div class="message-input">
-                    <textarea id="txt-messaggio" placeholder="Scrivi un pensiero anonimo o di gruppo..."></textarea>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-                        <label><input type="checkbox" id="chk-anonimo"> Invia come Anonimo</label>
-                        <button onclick="inviaMessaggio()" style="width:120px;">Invia</button>
+            <div class="right-column">
+                <div class="card">
+                    <h2>Medie Generali Classe</h2>
+                    <div class="stat-grid">
+                        <div class="stat-box"><div>Stress</div><div class="stat-val" id="lbl-stress">-</div></div>
+                        <div class="stat-box"><div>Ansia</div><div class="stat-val" id="lbl-ansia">-</div></div>
+                        <div class="stat-box"><div>Caffè</div><div class="stat-val" id="lbl-caffe">-</div></div>
+                        <div class="stat-box"><div>Stimolanti</div><div class="stat-val" id="lbl-stimolanti">-</div></div>
+                        <div class="stat-box" style="border: 1px solid var(--danger-color)"><div>Allucinazioni</div><div class="stat-val" id="lbl-allucinazioni" style="color:var(--danger-color)">-</div></div>
+                    </div>
+                    <div class="stat-grid">
+                        <div class="stat-box"><div>Prima Prova</div><div class="stat-val" id="lbl-p-prima">-</div></div>
+                        <div class="stat-box"><div>Seconda Prova</div><div class="stat-val" id="lbl-p-seconda">-</div></div>
+                        <div class="stat-box"><div>Orale</div><div class="stat-val" id="lbl-p-orale">-</div></div>
                     </div>
                 </div>
-                <div class="wall" id="muro-container"></div>
+
+                <div class="card">
+                    <h2>Linea Temporale Indice ISM (Tempo Reale)</h2>
+                    <div style="position: relative; height:260px; width:100%"><canvas id="chart-andamento"></canvas></div>
+                </div>
+
+                <div class="card">
+                    <h2>Muro della Disperazione</h2>
+                    <div class="message-input">
+                        <textarea id="txt-messaggio" placeholder="Scrivi un pensiero anonimo o di classe..."></textarea>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                            <label><input type="checkbox" id="chk-anonimo"> Invia come Anonimo</label>
+                            <button onclick="inviaMessaggio()" style="width:120px;">Invia</button>
+                        </div>
+                    </div>
+                    <div class="wall" id="muro-container"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -138,10 +156,86 @@
     let istanzaGrafico = null;
 
     window.addEventListener('DOMContentLoaded', () => {
-        caricaDashboard();
-        caricaMessaggi();
+        controlloSessione();
     });
 
+    function controlloSessione() {
+        const token = localStorage.getItem('token_ism');
+        const nick = localStorage.getItem('nickname_ism');
+        
+        if(token) {
+            document.getElementById('sezione-auth').classList.add('hidden');
+            document.getElementById('sezione-applicazione').classList.remove('hidden');
+            document.getElementById('saluto-utente').innerText = "Connesso come: " + nick;
+            caricaDashboard();
+            caricaMessaggi();
+        } else {
+            document.getElementById('sezione-auth').classList.remove('hidden');
+            document.getElementById('sezione-applicazione').classList.add('hidden');
+        }
+    }
+
+    function switchAuth(registrazione) {
+        if(registrazione) {
+            document.getElementById('card-login').classList.add('hidden');
+            document.getElementById('card-registrazione').classList.remove('hidden');
+        } else {
+            document.getElementById('card-login').classList.remove('hidden');
+            document.getElementById('card-registrazione').classList.add('hidden');
+        }
+    }
+
+    /* GESTIONE RETE AUTENTICAZIONE */
+    async function eseguiLogin(e) {
+        e.preventDefault();
+        const payload = {
+            username: document.getElementById('log-user').value.trim(),
+            password: document.getElementById('log-pass').value
+        };
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if(!res.ok) return alert(data.error || "Errore di login");
+            
+            localStorage.setItem('token_ism', data.token);
+            localStorage.setItem('nickname_ism', data.nickname);
+            controlloSessione();
+        } catch(err) { alert("Server non raggiungibile"); }
+    }
+
+    async function eseguiRegistrazione(e) {
+        e.preventDefault();
+        const payload = {
+            username: document.getElementById('reg-user').value.trim(),
+            nickname: document.getElementById('reg-nick').value.trim(),
+            nome: document.getElementById('reg-nome').value.trim(),
+            classe: document.getElementById('reg-classe').value.trim(),
+            password: document.getElementById('reg-pass').value
+        };
+        try {
+            const res = await fetch('/api/auth/registrazione', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if(!res.ok) return alert(data.error || "Errore di registrazione");
+            
+            alert("Registrazione completata! Esegui il login.");
+            switchAuth(false);
+        } catch(err) { alert("Server non raggiungibile"); }
+    }
+
+    function eseguiLogout() {
+        localStorage.clear();
+        controlloSessione();
+    }
+
+    /* OPERAZIONI CRONOLOGIA E CRUSCOTTO */
     async function caricaDashboard() {
         try {
             const response = await fetch('/api/statistiche');
@@ -158,70 +252,25 @@
             document.getElementById('lbl-p-seconda').innerText = m.copertura.seconda.toFixed(0) + '%';
             document.getElementById('lbl-p-orale').innerText = m.copertura.orale.toFixed(0) + '%';
 
-            // Mappatura corretta delle coordinate sull'asse X (Data/Ora ISO) e Y (Valore ISM)
-            if (data.storico_grafico && data.storico_grafico.length > 0) {
-                const coordinatePunti = data.storico_grafico.map(pt => ({
-                    x: new Date(pt.data_ora), 
-                    y: pt.valore
-                }));
-                renderizzaGrafico(coordinatePunti);
-            } else {
-                renderizzaGrafico([]);
+            if(data.storico_grafico) {
+                renderizzaGrafico(data.storico_grafico.map(pt => ({ x: new Date(pt.data_ora), y: pt.valore })));
             }
-        } catch (e) { 
-            console.error("Errore durante il caricamento della dashboard:", e); 
-        }
+        } catch (e) {}
     }
 
     function renderizzaGrafico(punti) {
         const ctx = document.getElementById('chart-andamento').getContext('2d');
         if(istanzaGrafico) istanzaGrafico.destroy();
-
         istanzaGrafico = new Chart(ctx, {
             type: 'line',
-            data: {
-                datasets: [{
-                    label: 'Fluttuazione ISM Classe',
-                    data: punti,
-                    borderColor: '#58a6ff',
-                    backgroundColor: 'rgba(88, 166, 255, 0.08)',
-                    borderWidth: 2,
-                    tension: 0.15,
-                    fill: true,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { min: 0, max: 100, grid: { color: '#21262d' }, ticks: { color: '#c9d1d9' } },
-                    x: { 
-                        type: 'time', 
-                        time: {
-                            tooltipFormat: 'dd MMM, HH:mm',
-                            displayFormats: {
-                                minute: 'HH:mm',
-                                hour: 'HH:mm',
-                                day: 'dd MMM'
-                            }
-                        },
-                        grid: { color: '#21262d' }, 
-                        ticks: { color: '#c9d1d9', autoSkip: true, maxTicksLimit: 8 } 
-                    }
-                },
-                plugins: { legend: { display: false } }
-            }
+            data: { datasets: [{ label: 'Fluttuazione ISM Classe', data: punti, borderColor: '#58a6ff', backgroundColor: 'rgba(88, 166, 255, 0.08)', borderWidth: 2, tension: 0.15, fill: true }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100, grid: { color: '#21262d' } }, x: { type: 'time', time: { displayFormats: { hour: 'HH:mm', day: 'dd MMM' } }, grid: { color: '#21262d' } } }, plugins: { legend: { display: false } } }
         });
     }
 
     async function inviaDati(e) {
         e.preventDefault();
-        
-        // Risolto l'errore sui selettori degli ID del form delle percentuali
         const payload = {
-            id_utente: 1, 
             ore_sonno: parseInt(document.getElementById('sonno').value) || 0,
             ore_studio: parseInt(document.getElementById('studio').value) || 0,
             stress: parseInt(document.getElementById('stress').value) || 1,
@@ -239,18 +288,17 @@
         try {
             const response = await fetch('/api/aggiornamento', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token_ism')
+                },
                 body: JSON.stringify(payload)
             });
             if(response.ok) {
-                alert("Nuovo stato inviato con successo!");
+                alert("Rilevazione registrata!");
                 caricaDashboard();
-            } else {
-                alert("Errore del server durante l'invio.");
             }
-        } catch(err) { 
-            alert("Errore di rete/connessione."); 
-        }
+        } catch(err) { alert("Errore di invio."); }
     }
 
     async function caricaMessaggi() {
@@ -278,8 +326,11 @@
         try {
             await fetch('/api/messaggi', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_utente: 1, testo: txt.value.trim(), is_anonimo: anon.checked })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token_ism')
+                },
+                body: JSON.stringify({ testo: txt.value.trim(), is_anonimo: anon.checked })
             });
             txt.value = ''; anon.checked = false; caricaMessaggi();
         } catch(e){}
