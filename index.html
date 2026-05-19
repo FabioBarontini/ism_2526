@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ISM - Indice Sopravvivenza Maturità</title>
+    <title>ISM - Dashboard Controllo Avanzato</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --bg-color: #0d1117;
@@ -14,7 +15,6 @@
             --success-color: #3fb950;
             --warning-color: #d29922;
         }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
@@ -22,275 +22,289 @@
             margin: 0;
             padding: 20px;
         }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid #30363d; padding-bottom: 20px; }
+        header h1 { color: var(--accent-color); margin-bottom: 5px; }
+        
+        .main-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .right-column { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        .card { background-color: var(--card-bg); border: 1px solid #30363d; border-radius: 8px; padding: 20px; height: fit-content; }
+        .card h2 { margin-top: 0; border-bottom: 1px solid #30363d; padding-bottom: 10px; font-size: 1.2rem; color: #ffffff; }
+        
+        /* Form e Inputs */
+        .form-group { margin-bottom: 12px; display: flex; flex-direction: column; }
+        .form-group label { font-size: 0.85rem; margin-bottom: 4px; color: #8b949e; }
+        .form-group input[type="number"], .form-group input[type="range"] {
+            background: #21262d; border: 1px solid #30363d; color: white; padding: 8px; border-radius: 6px;
         }
+        .range-container { display: flex; align-items: center; gap: 10px; }
+        .range-container span { font-size: 0.9rem; min-width: 35px; text-align: right; }
 
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-            border-bottom: 1px solid #30363d;
-            padding-bottom: 20px;
-        }
+        /* Statistiche */
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; text-align: center; margin-bottom: 15px; }
+        .stat-box { background: #21262d; padding: 12px; border-radius: 6px; font-size: 0.85rem; }
+        .stat-val { font-size: 1.3rem; font-weight: bold; color: var(--accent-color); margin-top: 4px; }
+        .stat-box.danger .stat-val { color: var(--danger-color); }
 
-        header h1 {
-            color: var(--accent-color);
-            margin-bottom: 5px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 20px;
-        }
-
-        .card h2 {
-            margin-top: 0;
-            border-bottom: 1px solid #30363d;
-            padding-bottom: 10px;
-            font-size: 1.2rem;
-            color: #ffffff;
-        }
-
-        .stat-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            text-align: center;
-        }
-
-        .stat-box {
-            background: #21262d;
-            padding: 15px;
-            border-radius: 6px;
-        }
-
-        .stat-val {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--accent-color);
-        }
-
-        .message-input textarea {
-            width: 100%;
-            height: 80px;
-            background: #21262d;
-            border: 1px solid #30363d;
-            color: white;
-            border-radius: 6px;
-            padding: 10px;
-            box-sizing: border-box;
-            resize: none;
-        }
-
-        .message-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 10px;
-        }
-
-        button {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        .wall {
-            max-height: 400px;
-            overflow-y: auto;
-            margin-top: 15px;
-        }
-
-        .msg-post {
-            background: #21262d;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-            border-left: 4px solid var(--accent-color);
-        }
-
-        .msg-post.anon {
-            border-left: 4px solid var(--warning-color);
-        }
-
-        .msg-author {
-            color: var(--accent-color);
-            font-size: 0.8rem;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .msg-author.anon {
-            color: var(--warning-color);
-        }
+        /* Pulsanti e Muro */
+        button { background-color: var(--accent-color); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+        button:hover { opacity: 0.9; }
+        .message-input textarea { width: 100%; height: 60px; background: #21262d; border: 1px solid #30363d; color: white; border-radius: 6px; padding: 10px; box-sizing: border-box; resize: none; }
+        .wall { max-height: 250px; overflow-y: auto; margin-top: 15px; }
+        .msg-post { background: #21262d; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 0.85rem; border-left: 4px solid var(--accent-color); }
+        .msg-post.anon { border-left: 4px solid var(--warning-color); }
+        .msg-author { font-weight: bold; color: var(--accent-color); margin-bottom: 3px; font-size: 0.75rem; }
+        .msg-author.anon { color: var(--warning-color); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>ISM - Indice di Sopravvivenza Maturità</h1>
-        <p>Dashboard di controllo e monitoraggio dello stato psicofisico della classe</p>
+        <h1>ISM - Indice di Sopravvivenza Maturità 2.0</h1>
+        <p>Monitoraggio Avanzato dello Stato Psicofisico e Copertura Esami</p>
     </header>
 
-    <div class="grid">
+    <div class="main-grid">
         <div class="card">
-            <h2>Media della Classe</h2>
-            <div class="stat-grid">
-                <div class="stat-box">
-                    <div>Stress Medio</div>
-                    <div class="stat-val" id="lbl-stress">-</div>
+            <h2>Nuovo Monitoraggio</h2>
+            <form id="frm-aggiornamento" onsubmit="inviaDati(event)">
+                <div class="form-group">
+                    <label>Ore Sonno Notturno</label>
+                    <input type="number" id="sonno" min="0" max="24" value="6" required>
                 </div>
-                <div class="stat-box">
-                    <div>Ansia Media</div>
-                    <div class="stat-val" id="lbl-ansia">-</div>
+                <div class="form-group">
+                    <label>Ore Studio Giornaliere</label>
+                    <input type="number" id="studio" min="0" max="24" value="4" required>
                 </div>
-                <div class="stat-box">
-                    <div>Sonno Medio</div>
-                    <div class="stat-val" id="lbl-sonno">-</div>
+                <div class="form-group">
+                    <label>Livello Stress (1-10)</label>
+                    <input type="number" id="stress" min="1" max="10" value="5" required>
                 </div>
-                <div class="stat-box">
-                    <div>Studio Medio</div>
-                    <div class="stat-val" id="lbl-studio">-</div>
+                <div class="form-group">
+                    <label>Livello Ansia (1-10)</label>
+                    <input type="number" id="ansia" min="1" max="10" value="5" required>
                 </div>
-            </div>
+                <div class="form-group">
+                    <label>Crisi Esistenziali (0-10)</label>
+                    <input type="number" id="crisi" min="0" max="10" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Livello Energia (1-10)</label>
+                    <input type="number" id="energia" min="1" max="10" value="6" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Numero di Caffè presi</label>
+                    <input type="number" id="caffe" min="0" value="2" required>
+                </div>
+                <div class="form-group">
+                    <label>Bevande Stimolanti / Energy Drink assunti</label>
+                    <input type="number" id="stimolanti" min="0" value="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Allucinazioni avute</label>
+                    <input type="number" id="allucinazioni" min="0" value="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Copertura Prima Prova (%)</label>
+                    <div class="range-container">
+                        <input type="range" id="c_prima" min="0" max="100" value="50" oninput="document.getElementById('v_prima').innerText = this.value + '%'">
+                        <span id="v_prima">50%</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Copertura Seconda Prova (%)</label>
+                    <div class="range-container">
+                        <input type="range" id="c_seconda" min="0" max="100" value="30" oninput="document.getElementById('v_seconda').innerText = this.value + '%'">
+                        <span id="v_seconda">30%</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Copertura Colloquio Orale (%)</label>
+                    <div class="range-container">
+                        <input type="range" id="c_orale" min="0" max="100" value="20" oninput="document.getElementById('v_orale').innerText = this.value + '%'">
+                        <span id="v_orale">20%</span>
+                    </div>
+                </div>
+
+                <button type="submit">Invia Monitoraggio</button>
+            </form>
         </div>
 
-        <div class="card">
-            <h2>Muro dei Messaggi della Classe</h2>
-            <div class="message-input">
-                <textarea id="txt-messaggio" placeholder="Lascia un messaggio di incoraggiamento (o disperazione)..."></textarea>
-                <div class="message-controls">
-                    <label>
-                        <input type="checkbox" id="chk-anonimo"> Invia come Anonimo
-                    </label>
-                    <button onclick="inviaMessaggio()">Pubblica</button>
+        <div class="right-column">
+            <div class="card">
+                <h2>Media Globale della Classe</h2>
+                <div class="stat-grid">
+                    <div class="stat-box"><div class="label">Stress</div><div class="stat-val" id="lbl-stress">-</div></div>
+                    <div class="stat-box"><div class="label">Ansia</div><div class="stat-val" id="lbl-ansia">-</div></div>
+                    <div class="stat-box"><div class="label">Caffè Medi</div><div class="stat-val" id="lbl-caffe">-</div></div>
+                    <div class="stat-box"><div class="label">Stimolanti</div><div class="stat-val" id="lbl-stimolanti">-</div></div>
+                    <div class="stat-box danger"><div class="label">Allucinazioni</div><div class="stat-val" id="lbl-allucinazioni">-</div></div>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat-box"><div class="label">Avanz. Prima Prova</div><div class="stat-val" id="lbl-p-prima">-</div></div>
+                    <div class="stat-box"><div class="label">Avanz. Seconda Prova</div><div class="stat-val" id="lbl-p-seconda">-</div></div>
+                    <div class="stat-box"><div class="label">Avanz. Orale</div><div class="stat-val" id="lbl-p-orale">-</div></div>
                 </div>
             </div>
-            <div class="wall" id="muro-container">
+
+            <div class="card">
+                <h2>Andamento Storico Indice ISM</h2>
+                <div style="position: relative; height:250px; width:100%">
+                    <canvas id="chart-andamento"></canvas>
                 </div>
+            </div>
+
+            <div class="card">
+                <h2>Muro dei Messaggi</h2>
+                <div class="message-input">
+                    <textarea id="txt-messaggio" placeholder="Condividi la tua disperazione..."></textarea>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                        <label><input type="checkbox" id="chk-anonimo"> Invia come Anonimo</label>
+                        <button onclick="inviaMessaggio()" style="width:120px;">Pubblica</button>
+                    </div>
+                </div>
+                <div class="wall" id="muro-container"></div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Al caricamento della pagina scarica i dati aggiornati dal database
+    let istanzaGrafico = null;
+
     window.addEventListener('DOMContentLoaded', () => {
-        caricaStatistiche();
+        caricaDashboard();
         caricaMessaggi();
     });
 
-    // 1. Recupera le statistiche medie dal backend e aggiorna l'interfaccia
-    async function caricaStatistiche() {
+    async function caricaDashboard() {
         try {
             const response = await fetch('/api/statistiche');
-            const dati = await response.json();
+            const data = await response.json();
+            if(!response.ok) return;
 
-            if (response.ok) {
-                // Arrotonda a un decimale per una visualizzazione pulita
-                document.getElementById('lbl-stress').innerText = dati.stress_medio ? dati.stress_medio.toFixed(1) : '-';
-                document.getElementById('lbl-ansia').innerText = dati.ansia_media ? dati.ansia_media.toFixed(1) : '-';
-                document.getElementById('lbl-sonno').innerText = dati.sonno_medio ? dati.sonno_medio.toFixed(1) + 'h' : '-';
-                document.getElementById('lbl-studio').innerText = dati.studio_medio ? dati.studio_medio.toFixed(1) + 'h' : '-';
-            }
-        } catch (error) {
-            console.error("Errore nel caricamento delle statistiche:", error);
-        }
+            // Inserisci le medie testuali
+            const m = data.medie;
+            document.getElementById('lbl-stress').innerText = m.stress_medio.toFixed(1);
+            document.getElementById('lbl-ansia').innerText = m.ansia_media.toFixed(1);
+            document.getElementById('lbl-caffe').innerText = m.caffe_medio.toFixed(1);
+            document.getElementById('lbl-stimolanti').innerText = m.stimolanti_medi.toFixed(1);
+            document.getElementById('lbl-allucinazioni').innerText = m.allucinazioni_medie.toFixed(1);
+            document.getElementById('lbl-p-prima').innerText = m.copertura.prima.toFixed(0) + '%';
+            document.getElementById('lbl-p-seconda').innerText = m.copertura.seconda.toFixed(0) + '%';
+            document.getElementById('lbl-p-orale').innerText = m.copertura.orale.toFixed(0) + '%';
+
+            // Elabora i Dati per il Grafico dell'Andamento
+            const etichetteDate = data.storico_grafico.map(x => x.data);
+            const valoriIsm = data.storico_grafico.map(x => x.valore);
+
+            renderizzaGrafico(etichetteDate, valoriIsm);
+
+        } catch (e) { console.error("Errore rinfresco dashboard:", e); }
     }
 
-    // 2. Recupera la lista dei messaggi e la stampa a schermo
-    async function caricaMessaggi() {
-        try {
-            const response = await fetch('/api/messaggi');
-            const messaggi = await response.json();
+    function renderizzaGrafico(labels, dataValues) {
+        const ctx = document.getElementById('chart-andamento').getContext('2d');
+        
+        // Se il grafico esisteva già, distruggilo prima di ricrearlo aggiornato
+        if(istanzaGrafico) istanzaGrafico.destroy();
 
-            const container = document.getElementById('muro-container');
-            container.innerHTML = ''; // Svuota il contenitore vecchio
-
-            if (response.ok && messaggi.length > 0) {
-                messaggi.forEach(msg => {
-                    const div = document.createElement('div');
-                    // Applica una classe differente se il messaggio è anonimo
-                    div.className = `msg-post ${msg.is_anonimo ? 'anon' : ''}`;
-
-                    const autore = msg.is_anonimo ? "Studente Anonimo" : (msg.nickname || "Utente Sconosciuto");
-                    const classeAutore = msg.is_anonimo ? "msg-author anon" : "msg-author";
-
-                    div.innerHTML = `
-                        <div class="${classeAutore}">${autore}</div>
-                        <div>${escapeHTML(msg.testo)}</div>
-                    `;
-                    container.appendChild(div);
-                });
-            } else {
-                container.innerHTML = '<p style="text-align:center; color:#8b949e;">Nessun messaggio sul muro. Scrivi qualcosa!</p>';
+        istanzaGrafico = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Indice ISM Medio Classe',
+                    data: dataValues,
+                    borderColor: '#58a6ff',
+                    backgroundColor: 'rgba(88, 166, 255, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { min: 0, max: 100, grid: { color: '#21262d' }, ticks: { color: '#c9d1d9' } },
+                    x: { grid: { color: '#21262d' }, ticks: { color: '#c9d1d9' } }
+                },
+                plugins: { legend: { display: false } }
             }
-        } catch (error) {
-            console.error("Errore nel caricamento del muro:", error);
-        }
+        });
     }
 
-    // 3. Spedisce il nuovo messaggio al backend Express
-    async function inviaMessaggio() {
-        const inputTesto = document.getElementById('txt-messaggio');
-        const chkAnonimo = document.getElementById('chk-anonimo');
-
-        const testo = inputTesto.value.trim();
-        if (!testo) return alert("Scrivi un messaggio prima di pubblicare!");
-
-        // Payload da spedire alla rotta POST /api/messaggi
-        const corpoRichiesta = {
-            id_utente: 1, // Simuliamo temporaneamente l'utente loggato con ID 1 (Marco)
-            testo: testo,
-            is_anonimo: chkAnonimo.checked
+    async function inviaDati(e) {
+        e.preventDefault();
+        const payload = {
+            id_utente: 1, // Simuliamo l'utente corrente (id 1 = Marco)
+            ore_sonno: parseInt(document.getElementById('sonno').value),
+            ore_studio: parseInt(document.getElementById('studio').value),
+            stress: parseInt(document.getElementById('stress').value),
+            ansia: parseInt(document.getElementById('ansia').value),
+            crisi_esistenziali: parseInt(document.getElementById('crisi').value),
+            livello_energia: parseInt(document.getElementById('energia').value),
+            numero_caffe: parseInt(document.getElementById('caffe').value),
+            bevande_stimolanti: parseInt(document.getElementById('stimolanti').value),
+            allucinazioni: parseInt(document.getElementById('allucinazioni').value),
+            copertura_prima_prova: parseInt(document.getElementById('c_prima').value),
+            copertura_seconda_prova: parseInt(document.getElementById('c_seconda').value),
+            copertura_orale: parseInt(document.getElementById('c_orale').value),
         };
 
         try {
-            const response = await fetch('/api/messaggi', {
+            const response = await fetch('/api/aggiornamento', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(corpoRichiesta)
+                body: JSON.stringify(payload)
             });
-
-            if (response.ok) {
-                inputTesto.value = ''; // Resetta il campo di testo
-                chkAnonimo.checked = false; // Togli la spunta dall'anonimo
-                caricaMessaggi(); // Ricarica subito la lista aggiornata dal DB
-            } else {
-                alert("Errore durante l'invio del messaggio.");
+            if(response.ok) {
+                alert("Dati salvati! Grafico e medie aggiornati.");
+                caricaDashboard();
             }
-        } catch (error) {
-            console.error("Errore di connessione con il server:", error);
-        }
+        } catch(err) { alert("Errore di rete."); }
     }
 
-    // Funzione di sicurezza per evitare attacchi XSS (iniezione di codice maligno nei messaggi)
-    function escapeHTML(str) {
-        return str.replace(/[&<>'"]/g,
-            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-        );
+    // Funzioni per il Muro (Inalterate)
+    async function caricaMessaggi() {
+        try {
+            const res = await fetch('/api/messaggi');
+            const messaggi = await res.json();
+            const container = document.getElementById('muro-container');
+            container.innerHTML = '';
+            if(res.ok && messaggi.length > 0) {
+                messaggi.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = `msg-post ${m.is_anonimo ? 'anon' : ''}`;
+                    const aut = m.is_anonimo ? "Studente Anonimo" : (m.nickname || "Utente");
+                    div.innerHTML = `<div class="msg-author">${aut}</div><div>${escapeHTML(m.testo)}</div>`;
+                    container.appendChild(div);
+                });
+            } else { container.innerHTML = '<p style="text-align:center;color:#8b949e;">Muro vuoto</p>'; }
+        } catch(e){}
     }
+
+    async function inviaMessaggio() {
+        const txt = document.getElementById('txt-messaggio');
+        const anon = document.getElementById('chk-anonimo');
+        if(!txt.value.trim()) return;
+        try {
+            await fetch('/api/messaggi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_utente: 1, testo: txt.value.trim(), is_anonimo: anon.checked })
+            });
+            txt.value = ''; anon.checked = false; caricaMessaggi();
+        } catch(e){}
+    }
+
+    function escapeHTML(str) { return str.replace(/[&<>'"]/g, t => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[t] || t)); }
 </script>
-
 </body>
 </html>
