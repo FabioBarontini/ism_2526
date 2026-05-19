@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISM - Indice Sopravvivenza Maturità</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --text-color: #c9d1d9;
+            --accent-color: #58a6ff;
+            --danger-color: #f85149;
+            --success-color: #3fb950;
+            --warning-color: #d29922;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 20px;
+        }
+
+        header h1 {
+            color: var(--accent-color);
+            margin-bottom: 5px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 10px;
+            font-size: 1.2rem;
+            color: #ffffff;
+        }
+
+        /* Statistiche Grid Interna */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .stat-box {
+            background: #21262d;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .stat-val {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        /* Muro Messaggi */
+        .message-input textarea {
+            width: 100%;
+            height: 80px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: white;
+            border-radius: 6px;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: none;
+        }
+
+        .message-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .wall {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .msg-post {
+            background: #21262d;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .msg-author {
+            color: var(--accent-color);
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .msg-anon {
+            color: var(--warning-color);
+        }
+
+        /* Classifiche */
+        .leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #21262d;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>ISM - Indice di Sopravvivenza Maturità</h1>
+        <p>Dashboard di controllo e monitoraggio dello stato psicofisico della classe</p>
+    </header>
+
+    <div class="grid">
+        <div class="card">
+            <h2>Media della Classe</h2>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div>Stress Medio</div>
+                    <div class="stat-val" id="lbl-stress">-</div>
+                </div>
+                <div class="stat-box">
+                    <div>Ansia Media</div>
+                    <div class="stat-val" id="lbl-ansia">-</div>
+                </div>
+                <div class="stat-box">
+                    <div>Sonno Medio</div>
+                    <div class="stat-val" id="lbl-sonno">-</div>
+                </div>
+                <div class="stat-box">
+                    <div>Studio Medio</div>
+                    <div class="stat-val" id="lbl-studio">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Muro dei Messaggi della Classe</h2>
+            <div class="message-input">
+                <textarea id="txt-messaggio" placeholder="Lascia un messaggio di incoraggiamento (o disperazione)..."></textarea>
+                <div class="message-controls">
+                    <label>
+                        <input type="checkbox" id="chk-anonimo"> Invia come Anonimo
+                    </label>
+                    <button onclick="inviaMessaggio()">Pubblica</button>
+                </div>
+            </div>
+            <div class="wall" id="muro-container">

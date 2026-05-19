@@ -1,0 +1,13 @@
+{
+  "name": "ism-backend",
+  "version": "1.0.0",
+  "description": "Indice Sopravvivenza Maturità Backend per Vercel",
+  "main": "api/server.js",
+  "scripts": {
+    "start": "node api/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.11.5"
+  }
+}
