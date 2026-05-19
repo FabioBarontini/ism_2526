@@ -82,13 +82,13 @@
                 <div class="form-group"><label>Allucinazioni Esistenziali/Visive</label><input type="number" id="allucinazioni" min="0" value="0" required></div>
 
                 <div class="form-group"><label>Copertura Prima Prova (%)</label>
-                    <div class="range-container"><input type="range" id="c_prima" min="0" max="100" value="40" oninput="document.getElementById('v_prima').innerText = this.value + '%购'"><span id="v_prima">40%</span></div>
+                    <div class="range-container"><input type="range" id="c_prima" min="0" max="100" value="40" oninput="document.getElementById('v_prima').innerText = this.value + '%'"><span id="v_prima">40%</span></div>
                 </div>
                 <div class="form-group"><label>Copertura Seconda Prova (%)</label>
-                    <div class="range-container"><input type="range" id="c_seconda" min="0" max="100" value="25" oninput="document.getElementById('v_seconda').innerText = this.value + '%购'"><span id="v_seconda">25%</span></div>
+                    <div class="range-container"><input type="range" id="c_seconda" min="0" max="100" value="25" oninput="document.getElementById('v_seconda').innerText = this.value + '%'"><span id="v_seconda">25%</span></div>
                 </div>
                 <div class="form-group"><label>Copertura Orale (%)</label>
-                    <div class="range-container"><input type="range" id="c_orale" min="0" max="100" value="15" oninput="document.getElementById('v_orale').innerText = this.value + '%购'"><span id="v_orale">15%</span></div>
+                    <div class="range-container"><input type="range" id="c_orale" min="0" max="100" value="15" oninput="document.getElementById('v_orale').innerText = this.value + '%'"><span id="v_orale">15%</span></div>
                 </div>
 
                 <button type="submit">Invia Stato Attuale</button>
@@ -158,14 +158,19 @@
             document.getElementById('lbl-p-seconda').innerText = m.copertura.seconda.toFixed(0) + '%';
             document.getElementById('lbl-p-orale').innerText = m.copertura.orale.toFixed(0) + '%';
 
-            // Mappatura delle coordinate { x: Tempo ISO, y: Valore ISM }
-            const coordinatePunti = data.storico_grafico.map(pt => ({
-                x: pt.data_ora, 
-                y: pt.valore
-            }));
-
-            renderizzaGrafico(coordinatePunti);
-        } catch (e) { console.error(e); }
+            // Mappatura corretta delle coordinate sull'asse X (Data/Ora ISO) e Y (Valore ISM)
+            if (data.storico_grafico && data.storico_grafico.length > 0) {
+                const coordinatePunti = data.storico_grafico.map(pt => ({
+                    x: new Date(pt.data_ora), 
+                    y: pt.valore
+                }));
+                renderizzaGrafico(coordinatePunti);
+            } else {
+                renderizzaGrafico([]);
+            }
+        } catch (e) { 
+            console.error("Errore durante il caricamento della dashboard:", e); 
+        }
     }
 
     function renderizzaGrafico(punti) {
@@ -193,7 +198,7 @@
                 scales: {
                     y: { min: 0, max: 100, grid: { color: '#21262d' }, ticks: { color: '#c9d1d9' } },
                     x: { 
-                        type: 'time', // Scala temporale continua abilitata
+                        type: 'time', 
                         time: {
                             tooltipFormat: 'dd MMM, HH:mm',
                             displayFormats: {
@@ -213,20 +218,22 @@
 
     async function inviaDati(e) {
         e.preventDefault();
+        
+        // Risolto l'errore sui selettori degli ID del form delle percentuali
         const payload = {
-            id_utente: 1, // Simulazione utente corrente
-            ore_sonno: parseInt(document.getElementById('sonno').value),
-            ore_studio: parseInt(document.getElementById('studio').value),
-            stress: parseInt(document.getElementById('stress').value),
-            ansia: parseInt(document.getElementById('ansia').value),
-            crisi_esistenziali: parseInt(document.getElementById('crisi').value),
-            livello_energia: parseInt(document.getElementById('energia').value),
-            numero_caffe: parseInt(document.getElementById('caffe').value),
-            bevande_stimolanti: parseInt(document.getElementById('stimolanti').value),
-            allucinazioni: parseInt(document.getElementById('allucinazioni').value),
-            copertura_prima_prova: parseInt(document.getElementById('c_prima').value),
-            copertura_seconda_prova: parseInt(document.getElementById('c_seconda').value),
-            copertura_orale: parseInt(document.getElementById('c_orale').value),
+            id_utente: 1, 
+            ore_sonno: parseInt(document.getElementById('sonno').value) || 0,
+            ore_studio: parseInt(document.getElementById('studio').value) || 0,
+            stress: parseInt(document.getElementById('stress').value) || 1,
+            ansia: parseInt(document.getElementById('ansia').value) || 1,
+            crisi_esistenziali: parseInt(document.getElementById('crisi').value) || 0,
+            livello_energia: parseInt(document.getElementById('energia').value) || 1,
+            numero_caffe: parseInt(document.getElementById('caffe').value) || 0,
+            bevande_stimolanti: parseInt(document.getElementById('stimolanti').value) || 0,
+            allucinazioni: parseInt(document.getElementById('allucinazioni').value) || 0,
+            copertura_prima_prova: parseInt(document.getElementById('c_prima').value) || 0,
+            copertura_seconda_prova: parseInt(document.getElementById('c_seconda').value) || 0,
+            copertura_orale: parseInt(document.getElementById('c_orale').value) || 0,
         };
 
         try {
@@ -236,10 +243,14 @@
                 body: JSON.stringify(payload)
             });
             if(response.ok) {
-                alert("Nuovo stato inviato! Grafico aggiornato in tempo reale.");
+                alert("Nuovo stato inviato con successo!");
                 caricaDashboard();
+            } else {
+                alert("Errore del server durante l'invio.");
             }
-        } catch(err) { alert("Errore di invio."); }
+        } catch(err) { 
+            alert("Errore di rete/connessione."); 
+        }
     }
 
     async function caricaMessaggi() {
